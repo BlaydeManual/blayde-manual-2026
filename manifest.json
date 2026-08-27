@@ -1,0 +1,171 @@
+{
+  "vehicle": "blayde-manual-2026",
+  "source_manual": "browser-indexed",
+  "page_count": 8,
+  "generated_by": "shop-manual-indexer (browser)",
+  "indexing_metrics": {
+    "elapsed_sec": 10,
+    "pages_indexed": 8,
+    "pool_size": 1,
+    "hardware_concurrency": 12
+  },
+  "page_geometry": {
+    "1": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "2": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "3": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "4": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "5": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "6": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "7": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    },
+    "8": {
+      "composite_width_px": 1836,
+      "composite_height_px": 2376,
+      "page_width_pt": 612,
+      "page_height_pt": 792
+    }
+  },
+  "entries": [
+    {
+      "procedure_id": "p003_proc1_fig1",
+      "page": 3,
+      "section_heading": "Page 3, procedure 1",
+      "pixel_bbox": [
+        104,
+        488,
+        1075,
+        1111
+      ],
+      "source_layout": "flattened_scan_ocr",
+      "content_type": "photo",
+      "contributed_photo_path": "images/blayde-manual-2026/p003_proc1_fig1/",
+      "status": "needs_contributed_photo",
+      "_touched": false,
+      "_seen": true
+    },
+    {
+      "procedure_id": "p004_proc1_fig1",
+      "page": 4,
+      "section_heading": "Page 4, procedure 1",
+      "pixel_bbox": [
+        104,
+        400,
+        1075,
+        1023
+      ],
+      "source_layout": "flattened_scan_ocr",
+      "content_type": "photo",
+      "contributed_photo_path": "images/blayde-manual-2026/p004_proc1_fig1/",
+      "status": "needs_contributed_photo",
+      "_touched": false,
+      "_seen": true
+    },
+    {
+      "procedure_id": "p005_proc1_fig1",
+      "page": 5,
+      "section_heading": "Page 5, procedure 1",
+      "pixel_bbox": [
+        104,
+        442,
+        1075,
+        1069
+      ],
+      "source_layout": "flattened_scan_ocr",
+      "content_type": "photo",
+      "contributed_photo_path": "images/blayde-manual-2026/p005_proc1_fig1/",
+      "status": "needs_contributed_photo",
+      "_touched": false,
+      "_seen": true
+    },
+    {
+      "procedure_id": "p006_proc1_fig1",
+      "page": 6,
+      "section_heading": "Page 6, procedure 1",
+      "pixel_bbox": [
+        104,
+        442,
+        1075,
+        1069
+      ],
+      "source_layout": "flattened_scan_ocr",
+      "content_type": "photo",
+      "contributed_photo_path": "images/blayde-manual-2026/p006_proc1_fig1/",
+      "status": "needs_contributed_photo",
+      "_touched": false,
+      "_seen": true
+    },
+    {
+      "procedure_id": "p007_proc1_fig1",
+      "page": 7,
+      "section_heading": "Page 7, procedure 1",
+      "pixel_bbox": [
+        104,
+        401,
+        1075,
+        1023
+      ],
+      "source_layout": "flattened_scan_ocr",
+      "content_type": "photo",
+      "contributed_photo_path": "images/blayde-manual-2026/p007_proc1_fig1/",
+      "status": "needs_contributed_photo",
+      "_touched": false,
+      "_seen": true
+    },
+    {
+      "procedure_id": "p008_proc1_fig1",
+      "page": 8,
+      "section_heading": "Page 8, procedure 1",
+      "pixel_bbox": [
+        104,
+        400,
+        1075,
+        1023
+      ],
+      "source_layout": "flattened_scan_ocr",
+      "content_type": "photo",
+      "contributed_photo_path": "images/blayde-manual-2026/p008_proc1_fig1/",
+      "status": "needs_contributed_photo",
+      "_touched": false,
+      "_seen": true
+    }
+  ],
+  "edition_id": "OEM",
+  "vehicle_class": "motorcycle",
+  "source_markers": {
+    "source_identifier": "https://blaydemanual.com"
+  }
+}
