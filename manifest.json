@@ -167,6 +167,5 @@
   "vehicle_class": "motorcycle",
   "source_markers": {
     "source_identifier": "https://blaydemanual.com"
-  },
-  "tampered_test_field": true
+  }
 }
