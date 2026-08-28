@@ -1,0 +1,11 @@
+# Infrastructure and legal/governance files -- require review beyond
+# routine single-maintainer discretion. manifest.json and images/** are
+# deliberately NOT listed here: that's a maintainer's actual job, and
+# needs no special gate. See the parent blayde-manual repo's ROADMAP.md
+# for the full reasoning.
+/LICENSE @TheBlayde
+/LICENSE.md @TheBlayde
+/checker.py @TheBlayde
+/validate_manifest.py @TheBlayde
+/.github/ @TheBlayde
+/CONTRIBUTING.md @TheBlayde
