@@ -1,0 +1,88 @@
+name: Validate contributed photo
+
+on:
+  pull_request:
+    paths:
+      - "images/**"
+
+jobs:
+  checker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Real gap this closes: the workflow trigger above fires whenever a
+      # PR touches images/** at all, but nothing previously checked that
+      # ONLY images/** changed. A PR could ride a second, unrelated change
+      # in alongside an innocent-looking photo -- the severe case being a
+      # modified .github/workflows/*.yml, which merged into this repo
+      # means real code execution here, not just a bad photo. Runs before
+      # any Python setup, so a PR that fails this never spends CI time on
+      # a checker run it was never going to pass anyway.
+      - name: Enforce PR touches only images/
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD > all_changed_files.txt
+          OUTSIDE=$(grep -v '^images/' all_changed_files.txt || true)
+          if [ -n "$OUTSIDE" ]; then
+            echo "This PR changes files outside images/, not just a contributed photo:"
+            echo "$OUTSIDE"
+            echo ""
+            echo "Only a photo under images/ is accepted here. Please open a separate PR for anything else."
+            exit 1
+          fi
+          echo "OK -- every changed file is under images/"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install checker dependencies
+        run: pip install pillow numpy
+
+      - name: Find changed photos
+        id: changed
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD -- images/ > changed_files.txt
+          cat changed_files.txt
+
+      - name: Enforce exactly one photo per PR
+        run: |
+          python - <<'EOF'
+          from pathlib import Path
+
+          files = [l.strip() for l in open("changed_files.txt") if l.strip()]
+          if not files:
+              print("No image files changed -- nothing to validate.")
+              raise SystemExit(0)
+
+          # Exactly one file, full stop -- not "one procedure_id, any number
+          # of files", which contribute.html's own upload input can never
+          # actually produce anyway (no `multiple` attribute -- confirmed,
+          # the real site only ever submits one photo per PR). There's also
+          # no real mechanism anywhere downstream (patcher.js, review-panel.js)
+          # to choose among several alt-angle photos landing in one PR, so
+          # allowing that here would only let an ambiguous state in that
+          # nothing can resolve -- see ROADMAP.md for the alt-file-selection
+          # idea this is deferred behind. auth-worker's own /accept-photo-pr
+          # gate enforces this exact same rule independently at merge time.
+          if len(files) > 1:
+              print(f"This PR touches {len(files)} photo files, not 1:")
+              for f in sorted(files):
+                  print(f"  - {f}")
+              print("\nOnly one photo per pull request is accepted -- please split this "
+                    "into separate PRs, one photo each.")
+              raise SystemExit(1)
+          print(f"OK -- single photo: {files[0]}")
+          EOF
+
+      - name: Run checker.py against changed photos
+        run: |
+          FILES=$(cat changed_files.txt)
+          if [ -z "$FILES" ]; then
+            echo "No image files to check."
+            exit 0
+          fi
+          python checker.py $FILES --manifest manifest.json
+          # checker.py exits non-zero on any hard-fail -- that's what fails this step.
