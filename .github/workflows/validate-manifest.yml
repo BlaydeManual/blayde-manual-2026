@@ -1,0 +1,22 @@
+name: Validate manifest.json structure
+
+on:
+  pull_request:
+    paths:
+      - "manifest.json"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run validate_manifest.py
+        run: |
+          python validate_manifest.py manifest.json
+          # validate_manifest.py exits non-zero on any hard-fail -- that's
+          # what fails this step. No extra dependencies needed, stdlib only.
