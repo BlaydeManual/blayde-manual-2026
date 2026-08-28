@@ -47,3 +47,4 @@ convention, photo requirements, and how review works.
 
 This repo will never contain the original manual's own scanned pages,
 photos, or text, in any branch or commit history.
+malicious change
