@@ -65,10 +65,10 @@
       "page": 3,
       "section_heading": "Page 3, procedure 1",
       "pixel_bbox": [
-        104,
-        488,
-        1075,
-        1111
+        65,
+        356,
+        819,
+        835
       ],
       "source_layout": "flattened_scan_ocr",
       "content_type": "photo",
