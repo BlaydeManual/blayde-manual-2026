@@ -3,20 +3,39 @@ name: Validate manifest.json structure
 on:
   pull_request:
     paths:
-      - "manifest.json"
+      - "*/manifest.json"
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Run validate_manifest.py
+      - name: Run validate_manifest.py against every changed edition's manifest
         run: |
-          python validate_manifest.py manifest.json
+          git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*/manifest.json' > changed_manifests.txt
+          cat changed_manifests.txt
+          if [ ! -s changed_manifests.txt ]; then
+            echo "No manifest.json changed."
+            exit 0
+          fi
+          FAIL=0
+          while read -r f; do
+            python validate_manifest.py "$f" || FAIL=1
+          done < changed_manifests.txt
+          exit $FAIL
           # validate_manifest.py exits non-zero on any hard-fail -- that's
           # what fails this step. No extra dependencies needed, stdlib only.
+          # Usually exactly one edition's manifest.json changes per PR, but
+          # this doesn't hard-enforce that the way validate-photo.yml
+          # enforces one-photo-per-PR -- a manifest edit (a moved bbox, a
+          # correction) is a maintainer action, not a first-time
+          # contributor one, and there's no real reason to block a
+          # maintainer touching two editions' manifests in one PR the way
+          # there is for mixing two editions' photos.

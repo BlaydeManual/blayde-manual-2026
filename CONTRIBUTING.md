@@ -13,11 +13,19 @@ that scrolls off a video description in a week.
 
 ## Before you start
 
-1. **Check the gallery** for the procedure you want to shoot: `manifest.json`
-   in this repo lists every figure the original manual needs a photo for,
-   each with a `procedure_id`. If you're not sure which one matches what
-   you're looking at, open an issue or ask -- better to check than guess.
-2. **One photo per pull request.** Small, independently-reviewable PRs
+1. **Pick the edition you're shooting for.** This repo may have more than
+   one -- an OEM manual and a Haynes manual, say -- each in its own
+   top-level folder (`oem/`, `haynes/`, etc.), each with its own
+   `manifest.json` and `images/` folder. They're different books with
+   different page numbers and figures, even when they document the exact
+   same vehicle, so a photo has to go in the one whose `manifest.json`
+   you actually checked it against.
+2. **Check the gallery** for the procedure you want to shoot:
+   `<edition>/manifest.json` lists every figure that edition's manual
+   needs a photo for, each with a `procedure_id`. If you're not sure
+   which one matches what you're looking at, open an issue or ask --
+   better to check than guess.
+3. **One photo per pull request.** Small, independently-reviewable PRs
    get merged fast, and this repo has no way to choose between several
    photos landing in one PR anyway. A PR bundling many photos means one
    bad one blocks the rest -- don't do that to yourself or the reviewer.
@@ -28,7 +36,7 @@ Run the checker before you open a PR -- it's the same script CI runs, so
 there are no surprises:
 
 ```bash
-python checker.py your_photo.jpg --manifest manifest.json
+python checker.py <edition>/images/your_photo.jpg --manifest <edition>/manifest.json
 ```
 
 It checks:
@@ -63,6 +71,8 @@ No essay, just the actual bar:
 
 ## Filename convention
 
+Inside the edition folder's own `images/`:
+
 ```
 <procedure_id>.jpg
 ```
@@ -79,6 +89,11 @@ be one "winning" photo per step:
 ```
 <procedure_id>__by_<your-github-username>__alt2.jpg
 ```
+
+`procedure_id` is scoped to its own edition, not the whole repo -- two
+different editions can (and often will) both have a `p003_proc1_fig1`
+that means two completely different pages, since they're different
+books. The edition folder is what disambiguates them, not the filename.
 
 ## Licensing your photo
 

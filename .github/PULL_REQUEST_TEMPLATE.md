@@ -1,5 +1,6 @@
 ## Procedure
 
+Edition: <!-- e.g. oem, haynes -- the folder this photo lives under -->
 `procedure_id`: <!-- e.g. p038_tappet-clearance_fig1 -->
 
 <!-- One photo per PR. If this PR touches more than one file,
@@ -7,7 +8,7 @@
 
 ## Checklist
 
-- [ ] I ran `python checker.py <file> --manifest manifest.json` locally and it passed
+- [ ] I ran `python checker.py <edition>/images/<file> --manifest <edition>/manifest.json` locally and it passed
 - [ ] This is my own photo (not sourced from a forum post, someone else's build thread, or the original manual)
 - [ ] I license this photo under **CC-BY 4.0** -- anyone may use it, with attribution to me
 - [ ] Filename follows the convention: `<procedure_id>__by_<my-github-username>.jpg`
