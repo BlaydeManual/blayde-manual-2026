@@ -3,7 +3,7 @@ name: Validate contributed photo
 on:
   pull_request:
     paths:
-      - "images/**"
+      - "*/images/**"
 
 jobs:
   checker:
@@ -14,25 +14,40 @@ jobs:
           fetch-depth: 0
 
       # Real gap this closes: the workflow trigger above fires whenever a
-      # PR touches images/** at all, but nothing previously checked that
-      # ONLY images/** changed. A PR could ride a second, unrelated change
-      # in alongside an innocent-looking photo -- the severe case being a
-      # modified .github/workflows/*.yml, which merged into this repo
-      # means real code execution here, not just a bad photo. Runs before
-      # any Python setup, so a PR that fails this never spends CI time on
-      # a checker run it was never going to pass anyway.
-      - name: Enforce PR touches only images/
+      # PR touches any edition's images/** at all, but nothing previously
+      # checked that ONLY that one edition's images/** changed. A PR could
+      # ride a second, unrelated change in alongside an innocent-looking
+      # photo -- the severe case being a modified .github/workflows/*.yml,
+      # which merged into this repo means real code execution here, not
+      # just a bad photo. Also enforces every changed file lives under the
+      # SAME edition folder -- a photo isn't reviewable against a
+      # manifest.json if the PR doesn't say which one it's for, and mixing
+      # two editions' photos in one PR is exactly as unreviewable as
+      # mixing two vehicles' would be. Runs before any Python setup, so a
+      # PR that fails this never spends CI time on a checker run it was
+      # never going to pass anyway.
+      - name: Enforce PR touches only one edition's images/
         run: |
           git diff --name-only origin/${{ github.base_ref }}...HEAD > all_changed_files.txt
-          OUTSIDE=$(grep -v '^images/' all_changed_files.txt || true)
+          OUTSIDE=$(grep -Ev '^[^/]+/images/' all_changed_files.txt || true)
           if [ -n "$OUTSIDE" ]; then
-            echo "This PR changes files outside images/, not just a contributed photo:"
+            echo "This PR changes files outside <edition>/images/, not just a contributed photo:"
             echo "$OUTSIDE"
             echo ""
-            echo "Only a photo under images/ is accepted here. Please open a separate PR for anything else."
+            echo "Only a photo under some edition's images/ folder is accepted here. Please open a separate PR for anything else."
             exit 1
           fi
-          echo "OK -- every changed file is under images/"
+          EDITIONS=$(cut -d/ -f1 all_changed_files.txt | sort -u)
+          EDITION_COUNT=$(echo "$EDITIONS" | wc -l)
+          if [ "$EDITION_COUNT" -gt 1 ]; then
+            echo "This PR touches more than one edition's images/ folder:"
+            echo "$EDITIONS"
+            echo ""
+            echo "A photo belongs to exactly one edition's manifest.json -- please split this into separate PRs, one edition each."
+            exit 1
+          fi
+          echo "OK -- every changed file is under $EDITIONS/images/"
+          echo "edition=$EDITIONS" >> "$GITHUB_ENV"
 
       - uses: actions/setup-python@v5
         with:
@@ -44,7 +59,7 @@ jobs:
       - name: Find changed photos
         id: changed
         run: |
-          git diff --name-only origin/${{ github.base_ref }}...HEAD -- images/ > changed_files.txt
+          cp all_changed_files.txt changed_files.txt
           cat changed_files.txt
 
       - name: Enforce exactly one photo per PR
@@ -77,12 +92,16 @@ jobs:
           print(f"OK -- single photo: {files[0]}")
           EOF
 
-      - name: Run checker.py against changed photos
+      - name: Run checker.py against changed photo
         run: |
           FILES=$(cat changed_files.txt)
           if [ -z "$FILES" ]; then
             echo "No image files to check."
             exit 0
           fi
-          python checker.py $FILES --manifest manifest.json
+          # Manifest lives one level up from images/, under the same
+          # edition folder as the photo itself -- never the repo root,
+          # since a bbox is only meaningful against its own edition's
+          # coordinate space.
+          python checker.py $FILES --manifest "${edition}/manifest.json"
           # checker.py exits non-zero on any hard-fail -- that's what fails this step.

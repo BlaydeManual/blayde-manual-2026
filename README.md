@@ -38,12 +38,19 @@ convention, photo requirements, and how review works.
 
 ## What this repo actually contains
 
+Organized by edition -- one folder per version of the manual (`oem/`,
+`haynes/`, etc.). One vehicle can have several editions, all maintained
+by the same community, but each edition's coordinates are its own: a
+bbox calibrated against one scan can't be reused against a different
+book, even for the same vehicle. Each edition folder has:
 - `manifest.json` -- structure only: page numbers, section headings, and
   where each figure belongs. No copyrighted content from the original
   manual, ever -- see [LEGAL.md](https://github.com/BlaydeManual/blayde-manual/blob/main/LEGAL.md)
   in the main tooling repo for why.
-- `images/<procedure_id>/` -- community-contributed photos, each licensed
-  CC-BY 4.0 by its contributor.
+- `images/<procedure_id>__by_<username>.ext` -- community-contributed
+  photos, each licensed CC-BY 4.0 by its contributor. Flat files within
+  the edition folder, no per-procedure subfolders -- the filename
+  carries everything.
 
 This repo will never contain the original manual's own scanned pages,
-photos, or text, in any branch or commit history.
+photos, or text, in any branch or commit history, for any edition.
