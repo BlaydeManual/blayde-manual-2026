@@ -1,9 +1,7 @@
 name: Validate contributed photo
 
 on:
-  pull_request:
-    paths:
-      - "*/images/**"
+  pull_request: {}
 
 jobs:
   checker:
@@ -13,11 +11,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Real gap this closes: the workflow trigger above fires whenever a
-      # PR touches any edition's images/** at all, but nothing previously
-      # checked that ONLY that one edition's images/** changed. A PR could
-      # ride a second, unrelated change in alongside an innocent-looking
-      # photo -- the severe case being a modified .github/workflows/*.yml,
+      # Real, confirmed bug this closes, 2026-09-02: the trigger used to
+      # be path-filtered to */images/**, so this job never ran at all for
+      # a PR that didn't touch it -- a manifest-only PR, for instance.
+      # Branch protection requires this job's real status on EVERY PR
+      # (see auth-worker's handleApproveVehicle), but a job that never
+      # runs never posts one, and GitHub blocks merge indefinitely for a
+      # required check with no status at all, not just a failing one --
+      # every manifest-change PR was permanently unmergeable as a result.
+      # Triggering on every PR and skipping-with-success here, instead of
+      # relying on the trigger to filter, means this job always posts a
+      # real status regardless of what the PR touches.
+      - name: Check whether this PR touches any edition's images/
+        id: relevant
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD > all_changed_files.txt
+          if grep -qE '^[^/]+/images/' all_changed_files.txt; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No changes under any edition's images/ -- nothing for this check to validate."
+          fi
+
+      # Real gap this closes: the workflow used to trigger whenever a PR
+      # touched any edition's images/** at all, but nothing checked that
+      # ONLY that one edition's images/** changed. A PR could ride a
+      # second, unrelated change in alongside an innocent-looking photo
+      # -- the severe case being a modified .github/workflows/*.yml,
       # which merged into this repo means real code execution here, not
       # just a bad photo. Also enforces every changed file lives under the
       # SAME edition folder -- a photo isn't reviewable against a
@@ -27,6 +47,7 @@ jobs:
       # PR that fails this never spends CI time on a checker run it was
       # never going to pass anyway.
       - name: Enforce PR touches only one edition's images/
+        if: steps.relevant.outputs.relevant == 'true'
         run: |
           git diff --name-only origin/${{ github.base_ref }}...HEAD > all_changed_files.txt
           OUTSIDE=$(grep -Ev '^[^/]+/images/' all_changed_files.txt || true)
@@ -50,19 +71,23 @@ jobs:
           echo "edition=$EDITIONS" >> "$GITHUB_ENV"
 
       - uses: actions/setup-python@v5
+        if: steps.relevant.outputs.relevant == 'true'
         with:
           python-version: "3.11"
 
       - name: Install checker dependencies
+        if: steps.relevant.outputs.relevant == 'true'
         run: pip install pillow numpy
 
       - name: Find changed photos
+        if: steps.relevant.outputs.relevant == 'true'
         id: changed
         run: |
           cp all_changed_files.txt changed_files.txt
           cat changed_files.txt
 
       - name: Enforce exactly one photo per PR
+        if: steps.relevant.outputs.relevant == 'true'
         run: |
           python - <<'EOF'
           from pathlib import Path
@@ -93,6 +118,7 @@ jobs:
           EOF
 
       - name: Run checker.py against changed photo
+        if: steps.relevant.outputs.relevant == 'true'
         run: |
           FILES=$(cat changed_files.txt)
           if [ -z "$FILES" ]; then

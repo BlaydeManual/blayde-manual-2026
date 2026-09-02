@@ -1,9 +1,15 @@
 name: Validate manifest.json structure
 
+# Real, confirmed bug this closes, 2026-09-02: this used to trigger only
+# on paths: */manifest.json, so a photo-only PR never ran this job at
+# all. Branch protection requires this job's real status on EVERY PR
+# (see auth-worker's handleApproveVehicle), and a required check that
+# never posts a status blocks merge indefinitely, not just a failing
+# one. Triggering on every PR instead relies on the step below's own
+# "no manifest.json changed -> exit 0" logic to skip cleanly and still
+# post a real success status.
 on:
-  pull_request:
-    paths:
-      - "*/manifest.json"
+  pull_request: {}
 
 jobs:
   validate:
