@@ -20,10 +20,53 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 
-MIN_WIDTH = 1200
+MIN_WIDTH = 1200  # fallback only -- used when a photo's procedure_id has no pixel_bbox/page_geometry to size against (see min_dimensions_for)
 MIN_HEIGHT = 900
+# Bbox-aware floor's own DPI target -- deliberately HALF of contribute.js's
+# own TARGET_DPI (200), and this floor skips that file's 2x HEADROOM
+# multiplier entirely. Not an attempt to mirror that formula exactly:
+# two independent implementations of the same math, in two different
+# languages (this is Python CI, that's browser JS), will drift out of
+# sync eventually. Real, confirmed bug this replaces (2026-09-11,
+# suzuki-sv650-1999 #17/#19): a flat 1200x900 floor rejected genuine
+# high-resolution photos (6000x4000 Sony a6000 originals) that
+# contribute.js's own bbox-aware downscale had correctly, deliberately
+# sized down for a small procedure's actual on-page footprint (see
+# ROADMAP.md's "Repo-size math" entry and web/contribute.js's
+# computeTargetLongEdge). Using half the DPI and none of the headroom
+# here means contribute.js's real output always clears this floor with
+# comfortable margin, so a future constant change on either side
+# doesn't immediately start rejecting otherwise-correct submissions.
+BBOX_TARGET_DPI = 100
+ABS_MIN_DIMENSION = 400  # sanity floor regardless of bbox size -- never accept something smaller than this even for a tiny bbox
 BLUR_VARIANCE_FLOOR = 80.0   # Laplacian-variance focus score; below this reads as blurry
 MAX_FILE_MB = 15
+
+
+def min_dimensions_for(procedure_id, manifest):
+    """The real resolution floor for one procedure's photo, sized to that
+    procedure's actual bbox rather than a flat number -- falls back to
+    the flat MIN_WIDTH/MIN_HEIGHT when the manifest, the entry, its
+    pixel_bbox, or that page's page_geometry aren't available (an
+    add-new-slot proposal with no bbox yet, an older/malformed
+    manifest, etc.), same as contribute.js's own computeTargetLongEdge
+    falls back to FALLBACK_MAX_DIMENSION_PX in the equivalent case."""
+    if not manifest:
+        return MIN_WIDTH, MIN_HEIGHT
+    entry = next((e for e in manifest.get("entries", []) if e.get("procedure_id") == procedure_id), None)
+    if not entry or not entry.get("pixel_bbox"):
+        return MIN_WIDTH, MIN_HEIGHT
+    geometry = (manifest.get("page_geometry") or {}).get(str(entry.get("page")))
+    if not geometry:
+        return MIN_WIDTH, MIN_HEIGHT
+    x0, y0, x1, y1 = entry["pixel_bbox"]
+    scale_x = geometry["composite_width_px"] / geometry["page_width_pt"]
+    scale_y = geometry["composite_height_px"] / geometry["page_height_pt"]
+    width_pt = (x1 - x0) / scale_x
+    height_pt = (y1 - y0) / scale_y
+    target_w = (width_pt / 72) * BBOX_TARGET_DPI
+    target_h = (height_pt / 72) * BBOX_TARGET_DPI
+    return max(ABS_MIN_DIMENSION, round(target_w)), max(ABS_MIN_DIMENSION, round(target_h))
 
 
 def laplacian_variance(gray_arr):
@@ -42,7 +85,7 @@ def laplacian_variance(gray_arr):
     return out.var()
 
 
-def check_image(path, expected_id=None, manifest_ids=None):
+def check_image(path, expected_id=None, manifest_ids=None, manifest=None):
     results = {"file": str(path), "hard_fails": [], "warnings": [], "info": {}}
     p = Path(path)
 
@@ -60,8 +103,9 @@ def check_image(path, expected_id=None, manifest_ids=None):
 
     w, h = img.size
     results["info"]["dimensions"] = f"{w}x{h}"
-    if w < MIN_WIDTH or h < MIN_HEIGHT:
-        results["hard_fails"].append(f"resolution too low ({w}x{h}, need >= {MIN_WIDTH}x{MIN_HEIGHT})")
+    min_w, min_h = min_dimensions_for(expected_id, manifest)
+    if w < min_w or h < min_h:
+        results["hard_fails"].append(f"resolution too low ({w}x{h}, need >= {min_w}x{min_h})")
 
     # Hard fail on ANY non-pixel data, not just EXIF -- direct instruction:
     # "zero data, only the pixels" (attribution lives outside the image
@@ -122,11 +166,10 @@ def strip_exif_inplace(path):
     clean.save(path)
 
 
-def load_manifest_ids(manifest_path):
+def load_manifest(manifest_path):
     if not manifest_path or not Path(manifest_path).exists():
         return None
-    m = json.loads(Path(manifest_path).read_text())
-    return {e["procedure_id"] for e in m["entries"]}
+    return json.loads(Path(manifest_path).read_text())
 
 
 def main():
@@ -138,17 +181,18 @@ def main():
     ap.add_argument("--json", action="store_true", help="machine-readable output (used by CI)")
     args = ap.parse_args()
 
-    manifest_ids = load_manifest_ids(args.manifest)
+    manifest = load_manifest(args.manifest)
+    manifest_ids = {e["procedure_id"] for e in manifest["entries"]} if manifest else None
     all_results = []
     any_hard_fail = False
 
     for img_path in args.images:
         p = Path(img_path)
         expected_id = p.stem.split("__")[0]
-        r = check_image(p, expected_id=expected_id, manifest_ids=manifest_ids)
+        r = check_image(p, expected_id=expected_id, manifest_ids=manifest_ids, manifest=manifest)
         if args.fix and any("non-pixel data" in f for f in r["hard_fails"]):
             strip_exif_inplace(p)
-            r = check_image(p, expected_id=expected_id, manifest_ids=manifest_ids)
+            r = check_image(p, expected_id=expected_id, manifest_ids=manifest_ids, manifest=manifest)
             r["info"]["fixed"] = "non-pixel data stripped by --fix"
         all_results.append(r)
         if r["hard_fails"]:
